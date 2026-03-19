@@ -15,6 +15,7 @@
 11. [인증 방식](#인증-방식)
 12. [DB 변경 시](#db-변경-시)
 13. [관리자 비밀번호 변경](#관리자-비밀번호-변경)
+14. [Git 브랜치 관리](#git-브랜치-관리)
 
 ---
 
@@ -295,3 +296,55 @@ node -e "const c=require('crypto');console.log(c.createHash('sha256').update('�
 ```
 
 출력된 해시값을 `.env.local`의 `ADMIN_PASSWORD_HASH`에 저장합니다.
+
+---
+
+## Git 브랜치 관리
+
+### 브랜치 구조
+
+| 브랜치 | 내용 | 비고 |
+|--------|------|------|
+| `main` | 기존 PHP (CodeIgniter 3) 프로젝트 | 변경 금지 |
+| `renew` | React + Next.js 리뉴얼 프로젝트 | 현재 작업 브랜치 |
+
+> `renew` 브랜치는 `main`과 완전히 독립된 히스토리를 가집니다. **절대 main에 merge하지 마세요.**
+
+### 저장소
+
+```
+https://github.com/AxisAdmin/license.git
+```
+
+### 브랜치 전환
+
+```bash
+# 기존 PHP 프로젝트로 전환
+git checkout main
+
+# 리뉴얼 프로젝트로 전환
+git checkout renew
+```
+
+### 리뉴얼 프로젝트 클론 (새 환경에서)
+
+```bash
+git clone -b renew https://github.com/AxisAdmin/license.git license_renew
+cd license_renew
+npm install
+```
+
+### 작업 후 푸시
+
+```bash
+# renew 브랜치에서 작업 후
+git add .
+git commit -m "커밋 메시지"
+git push origin renew
+```
+
+### 주의 사항
+
+- `main` 브랜치에 push하거나 merge하지 않도록 주의
+- `renew` 브랜치에서 작업 전 `git branch` 명령으로 현재 브랜치 확인
+- `.env.local`은 `.gitignore`에 포함되어 있어 원격에 올라가지 않음
