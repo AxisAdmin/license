@@ -187,6 +187,10 @@ export default function Register({
                 <TextField name="scms_url" defaultValue={formData?.scms_url || ''} size="small" fullWidth inputProps={{ style: { fontSize: 13 } }} />
               </FieldRow>
 
+              <FieldRow label="SCMS URL (V2)">
+                <TextField name="scms_url_v2" defaultValue={formData?.scms_url_v2 || ''} size="small" fullWidth inputProps={{ style: { fontSize: 13 } }} />
+              </FieldRow>
+
               <FieldRow label="음원서비스">
                 <YNSelect name="mp3_enable" defaultValue={formData?.mp3_enable || 'N'}
                   options={[{ value: 'N', label: '미사용' }, { value: 'Y', label: '사용' }]} />
@@ -242,6 +246,10 @@ export default function Register({
 
               <FieldRow label="spkid">
                 <TextField name="spkid" defaultValue={formData?.spkid || ''} size="small" fullWidth inputProps={{ style: { fontSize: 13 } }} />
+              </FieldRow>
+
+              <FieldRow label="spkid (V2)">
+                <TextField name="spkid_v2" defaultValue={formData?.spkid_v2 || ''} size="small" fullWidth inputProps={{ style: { fontSize: 13 } }} />
               </FieldRow>
 
               <FieldRow label="PC다운로더 사용여부">

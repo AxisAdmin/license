@@ -51,6 +51,7 @@ CREATE TABLE spauth (
 	service_domain VARCHAR(60) NOT NULL COLLATE utf8_ci,
 	app_event VARCHAR(120) NOT NULL COLLATE utf8_ci,
 	scms_url VARCHAR(120) NULL DEFAULT NULL COLLATE utf8_ci,
+	scms_url_v2 VARCHAR(120) NULL DEFAULT NULL COLLATE utf8_ci,
 	enable CHAR(1) NOT NULL DEFAULT 'Y' COLLATE utf8_ci,
 	mp3_enable CHAR(1) NOT NULL DEFAULT 'N' COLLATE utf8_ci,
 	service_icon VARCHAR(100) NULL DEFAULT NULL COLLATE utf8_ci,
@@ -60,6 +61,7 @@ CREATE TABLE spauth (
 	updated_date VARCHAR(14) NULL DEFAULT NULL COLLATE utf8_ci,
 	comment VARCHAR(255) NULL DEFAULT NULL COLLATE utf8_ci,
 	spkid VARCHAR(12) NULL DEFAULT NULL,
+	spkid_v2 VARCHAR(12) NULL DEFAULT NULL,
 	event_required CHAR(1) NULL DEFAULT 'N',
 	pc_download_yn CHAR(1) NULL DEFAULT 'N',
 	pc_config_url VARCHAR(120) NULL DEFAULT NULL,
@@ -87,7 +89,9 @@ COMMENT ON TABLE spauth IS '라이선스 인증 정보';
 
 ```sql
 COMMENT ON COLUMN spauth.ptype                 IS '리턴값 파싱방식';
+COMMENT ON COLUMN spauth.scms_url_v2           IS 'scms_url v2 url';
 COMMENT ON COLUMN spauth.spkid                 IS 'spkid';
+COMMENT ON COLUMN spauth.spkid_v2              IS 'multidrm 키';
 COMMENT ON COLUMN spauth.event_required        IS 'beginContent 필수 체크 용도(세종사이버대학교, seek-lock, rate-lock 리얼타임 체크를 위해)';
 COMMENT ON COLUMN spauth.pc_download_yn        IS 'PC 다운로드 사용여부 Y/N';
 COMMENT ON COLUMN spauth.pc_config_url         IS 'starplayer.txt url';
@@ -128,6 +132,7 @@ DROP DATABASE spauth
 | `service_domain` | VARCHAR(60) | - | 서비스 도메인 |
 | `app_event` | VARCHAR(120) | - | 앱 이벤트 |
 | `scms_url` | VARCHAR(120) | NULL | SCMS URL |
+| `scms_url_v2` | VARCHAR(120) | NULL | scms_url v2 키 |
 | `enable` | CHAR(1) | `'Y'` | 사용 여부 |
 | `mp3_enable` | CHAR(1) | `'N'` | MP3 사용 여부 |
 | `service_icon` | VARCHAR(100) | NULL | 서비스 아이콘 경로 |
@@ -137,6 +142,7 @@ DROP DATABASE spauth
 | `updated_date` | VARCHAR(14) | NULL | 수정일시 |
 | `comment` | VARCHAR(255) | NULL | 비고 |
 | `spkid` | VARCHAR(12) | NULL | spkid |
+| `spkid_v2` | VARCHAR(12) | NULL | multidrm 키 |
 | `event_required` | CHAR(1) | `'N'` | beginContent 필수 체크 여부 |
 | `pc_download_yn` | CHAR(1) | `'N'` | PC 다운로드 사용 여부 |
 | `pc_config_url` | VARCHAR(120) | NULL | starplayer.txt URL |
