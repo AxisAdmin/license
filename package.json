@@ -1,0 +1,25 @@
+{
+  "name": "axis-license",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p 8080"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.9",
+    "basic-ftp": "^5.0.5",
+    "formidable": "^3.5.1",
+    "ioredis": "^5.10.0",
+    "iron-session": "^8.0.1",
+    "mysql2": "^3.9.0",
+    "next": "^14.2.0",
+    "pg": "^8.20.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}
