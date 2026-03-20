@@ -34,11 +34,20 @@ npm install
 cp .env.example .env.local
 # .env.local 파일을 편집하여 DB, Redis 등 설정
 
+# Redis 실행 (Docker)
+docker run -d --name axis_license_redis -p 6389:6379 redis:7-alpine
+```
+
+> Redis는 로컬 테스트용으로 포트 **6389**을 사용합니다.
+> 기본 포트인 **6379** 사용에 문제가 없다면 `-p 6379:6379`로 변경하여 사용해도 됩니다.
+> (변경 시 `.env.local`의 `REDIS_PORT` 값도 함께 수정)
+
+```bash
 # 개발 서버 실행
 npm run dev
 ```
 
-> 상세한 실행 방법은 [GUIDE.md](./docs/GUIDE.md)를 참고하세요.
+> 상세한 실행 방법은 [GUIDE.md](./docs/GUIDE.md)를, Redis 설정은 [REDIS_GUIDE.md](./docs/REDIS_GUIDE.md)를 참고하세요.
 
 ---
 
