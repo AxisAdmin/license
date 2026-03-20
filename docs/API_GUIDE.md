@@ -6,8 +6,9 @@
 2. [요청 예시](#요청-예시)
 3. [license_code 유효성 규칙](#license_code-유효성-규칙)
 4. [응답 XML 구조](#응답-xml-구조)
-5. [/api/spauth 응답 필드 (전체 22개)](#apispauth-응답-필드-전체-22개)
+5. [/api/spauth 응답 필드 (전체 24개)](#apispauth-응답-필드-전체-24개)
 6. [/api/spauth/spauth 응답 필드 (기본 12개)](#apispauthspauth-응답-필드-기본-12개)
+7. [에러 로그](#에러-로그)
 
 ---
 
@@ -21,9 +22,10 @@
 | Query Param | `license_code` | `license_code` |
 | 응답 형식 | `application/xml` | `application/xml` |
 | 캐시 | `max-age=7200` (2시간) | `max-age=7200` (2시간) |
+| 에러 로그 | `api/spauth/log/custom_YYYYMMDD.log` | `api/spauth/log/custom_YYYYMMDD.log` |
 | 타임존 | Geo-IP (특정 4개 코드, IPv4/IPv6 지원), 나머지 Asia/Seoul | Asia/Seoul 고정 |
 | CDN | `axissoft1.cdn3.cafe24.com/web/images/` | `license.starplayer.net/license/files/` |
-| XML 필드 수 | 전체 (22개) | 기본 (12개) |
+| XML 필드 수 | 전체 (24개) | 기본 (12개) |
 
 > URL 매핑은 `next.config.js`의 `rewrites`로 처리합니다.
 
@@ -65,7 +67,7 @@ GET /spauth/spauth.php?license_code=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 
 ---
 
-## `/api/spauth` 응답 필드 (전체 22개)
+## `/api/spauth` 응답 필드 (전체 24개)
 
 | 필드 | 설명 |
 |---|---|
@@ -77,11 +79,13 @@ GET /spauth/spauth.php?license_code=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 | `launcher_image` | 런처 이미지 URL |
 | `app_event` | 앱 이벤트 URL |
 | `scms_url` | SCMS URL |
+| `scms_url_v2` | SCMS URL v2 |
 | `mp3_enable` | 음원서비스 사용 여부 (Y/N) |
 | `enable` | 라이선스 활성 여부 (Y/N) |
 | `ptype` | 파싱 타입 (json/xml) |
 | `server_time` | 서버 현재 시각 (YmdHis, Geo-IP 타임존 적용) |
 | `spkid` | SPKID |
+| `spkid_v2` | SPKID v2 |
 | `pc_download_yn` | PC 다운로더 사용 여부 (Y/N) |
 | `pc_config_url` | PC config URL |
 | `pc_history_url` | PC 수강이력 URL |
@@ -111,5 +115,49 @@ GET /spauth/spauth.php?license_code=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 | `ptype` | 파싱 타입 (json/xml) |
 | `server_time` | 서버 현재 시각 (YmdHis, Asia/Seoul 고정) |
 
+
+---
+
+## 에러 로그
+
+API 호출 실패 시 `src/pages/api/spauth/log/custom_YYYYMMDD.log` 파일에 에러 로그가 기록됩니다.
+
+### 로그 파일 경로
+
+```
+src/pages/api/spauth/log/custom_20260320.log
+```
+
+### 로그 형식
+
+```
+[20-Mar-2026 10:14:56 Asia/Seoul]
+47B58542-C099-4301-9575-424082058153
+ip : ::1
+error : 1
+message : wrong license_code length.
+```
+
+### 로그 기록 조건
+
+| 조건 | 기록 여부 |
+|---|---|
+| 파라미터 없음 (`no parameter.`) | O |
+| 잘못된 license_code (`wrong license_code.`) | O |
+| 길이 불일치 (`wrong license_code length.`) | O |
+| DB 데이터 없음 (`no data.`) | O |
+| DB 에러 (`db error.`) | O |
+| 정상 응답 (`success`) | X |
+
+### 로그 유틸리티
+
+`src/lib/logger.js`의 `writeLog(logDir, entries)` 함수를 사용합니다.
+
+- `logDir`: 로그 파일이 저장될 디렉터리 경로
+- `entries`: `{key, value}` 배열 — `key`가 있으면 `key : value`, 없으면 `value`만 출력
+
+> 로그 파일은 `.gitignore`에 의해 Git에 포함되지 않습니다.
+
+---
 
 > 테이블 스키마는 [postgreSQL.md](./postgreSQL.md)를 참고하세요.

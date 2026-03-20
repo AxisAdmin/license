@@ -75,6 +75,7 @@ npm run dev
 | 프론트엔드 | PHP View (HTML) | React JSX + MUI |
 | DB | MySQL (PDO/mysqli) | PostgreSQL (pg) |
 | 캐시 | 없음 | Redis (ioredis) |
+| 에러 로그 | PHP error_log (spauth/log/) | 파일 로그 (api/spauth/log/, logger.js) |
 | 세션 | PHP Session | iron-session (쿠키) |
 | 파일 업로드 | PHP ftp_* | basic-ftp |
 | 설정값 | 하드코딩 | .env.local (환경변수) |

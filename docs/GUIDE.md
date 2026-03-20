@@ -84,7 +84,8 @@ license_/
     │   ├── auth.js           # IP 화이트리스트 자동로그인 처리
     │   └── theme.js          # MUI 테마 (#ff4400 브랜드 컬러)
     ├── lib/
-    │   └── cache.js          # Redis 캐시 유틸리티 (getCache, setCache, delCache)
+    │   ├── cache.js          # Redis 캐시 유틸리티 (getCache, setCache, delCache)
+    │   └── logger.js         # 파일 로그 유틸리티 (writeLog)
     ├── models/
     │   └── license_pg.js     # DB 쿼리 함수 (getLicenseList, getLicenseDetail, saveLicense, deleteLicense)
     ├── services/
@@ -111,7 +112,8 @@ license_/
         └── api/
             ├── spauth/
             │   ├── index.js  # 라이선스 인증 XML API (spauth.php 대응)
-            │   └── spauth.js # 라이선스 인증 XML API (spauth/spauth.php 대응)
+            │   ├── spauth.js # 라이선스 인증 XML API (spauth/spauth.php 대응)
+            │   └── log/      # API 에러 로그 (custom_YYYYMMDD.log, .gitignore 제외)
             └── auth/
                 ├── login.js  # 로그인 처리
                 ├── logout.js # 로그아웃
@@ -174,8 +176,11 @@ license_/
 ### spauth API 조회 (`/api/spauth`)
 ```
 클라이언트 → GET /spauth?license_code=...
+  → 검증 실패 시 → 에러 로그 기록 (api/spauth/log/custom_YYYYMMDD.log) → XML 반환
   → Redis 캐시 조회 (HIT → 즉시 XML 반환)
-  → MISS → PostgreSQL DB 조회 → XML 생성 → Redis에 저장 (TTL 2시간) → XML 반환
+  → MISS → PostgreSQL DB 조회
+    → 데이터 없음/DB 에러 시 → 에러 로그 기록 → XML 반환
+    → 성공 → XML 생성 → Redis에 저장 (TTL 2시간) → XML 반환
 ```
 
 ---
