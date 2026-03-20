@@ -2,8 +2,10 @@
 // GET /api/spauth?license_code=XXXX-XXXX-XXXX-XXXX-XXXX
 // Returns: XML (전체 필드, Geo-IP 타임존 지원)
 
+import path from 'path';
 import pool from '@/config/db_pg';
 import { getCache, setCache } from '@/lib/cache';
+import { writeLog } from '@/lib/logger';
 
 const GEO_LICENSE_CODES = [
   '780FE6EC-BA01-4D38-A27F-A02111D02D8E',
@@ -104,9 +106,17 @@ export default async function handler(req, res) {
     message += 'no parameter.';
   }
 
+  const LOG_DIR = path.join(process.cwd(), 'src', 'pages', 'api', 'spauth', 'log');
+  const clientIP = getClientIP(req);
+
   // 검증 실패 시 즉시 반환
   if (error) {
-    console.error(`[spauth] ${licenseCode} | ip: ${req.socket?.remoteAddress} | error: ${message}`);
+    writeLog(LOG_DIR, [
+      { value: licenseCode || '' },
+      { key: 'ip', value: clientIP },
+      { key: 'error', value: String(error) },
+      { key: 'message', value: message },
+    ]);
     return res.status(200).send(buildXml(1, message, ''));
   }
 
@@ -150,11 +160,13 @@ export default async function handler(req, res) {
       xmlBody += `<launcher_image><![CDATA[${imageUrl}]]></launcher_image>\n`;
       xmlBody += `<app_event><![CDATA[${row.app_event || ''}]]></app_event>\n`;
       xmlBody += `<scms_url><![CDATA[${row.scms_url || ''}]]></scms_url>\n`;
+      xmlBody += `<scms_url_v2><![CDATA[${row.scms_url_v2 || ''}]]></scms_url_v2>\n`;
       xmlBody += `<mp3_enable><![CDATA[${row.mp3_enable || ''}]]></mp3_enable>\n`;
       xmlBody += `<enable><![CDATA[${row.enable || ''}]]></enable>\n`;
       xmlBody += `<ptype><![CDATA[${row.ptype || ''}]]></ptype>\n`;
       xmlBody += `<server_time><![CDATA[${serverTime}]]></server_time>\n`;
       xmlBody += `<spkid><![CDATA[${row.spkid || ''}]]></spkid>\n`;
+      xmlBody += `<spkid_v2><![CDATA[${row.spkid_v2 || ''}]]></spkid_v2>\n`;
       xmlBody += `<pc_download_yn><![CDATA[${row.pc_download_yn || ''}]]></pc_download_yn>\n`;
       xmlBody += `<pc_config_url><![CDATA[${row.pc_config_url || ''}]]></pc_config_url>\n`;
       xmlBody += `<pc_history_url><![CDATA[${row.pc_history_url || ''}]]></pc_history_url>\n`;
@@ -180,6 +192,11 @@ export default async function handler(req, res) {
     console.error(`[spauth] DB query failed | license: ${licenseCode} | error: ${err.message}`);
   }
 
-  console.error(`[spauth] ${licenseCode} | ip: ${req.socket?.remoteAddress} | error: ${message}`);
+  writeLog(LOG_DIR, [
+    { value: licenseCode || '' },
+    { key: 'ip', value: clientIP },
+    { key: 'error', value: String(error) },
+    { key: 'message', value: message },
+  ]);
   res.status(200).send(buildXml(1, message, ''));
 }

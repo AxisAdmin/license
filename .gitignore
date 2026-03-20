@@ -13,6 +13,9 @@ out/
 # debug
 npm-debug.log*
 
+# api log
+**/api/**/log/
+
 # OS
 Thumbs.db
 .DS_Store

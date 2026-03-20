@@ -2,8 +2,10 @@
 // GET /api/spauth/spauth?license_code=XXXX-XXXX-XXXX-XXXX-XXXX
 // Returns: XML (기본 필드, 타임존 Asia/Seoul 고정)
 
+import path from 'path';
 import pool from '@/config/db_pg';
 import { getCache, setCache } from '@/lib/cache';
+import { writeLog } from '@/lib/logger';
 
 function getServerTime() {
   const now = new Date();
@@ -62,9 +64,17 @@ export default async function handler(req, res) {
     message += 'no parameter.';
   }
 
+  const LOG_DIR = path.join(process.cwd(), 'src', 'pages', 'api', 'spauth', 'log');
+  const clientIP = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress?.replace(/^::ffff:/, '') || '';
+
   // 검증 실패 시 즉시 반환
   if (error) {
-    console.error(`[spauth/spauth] ${licenseCode} | ip: ${req.socket?.remoteAddress} | error: ${message}`);
+    writeLog(LOG_DIR, [
+      { value: licenseCode || '' },
+      { key: 'ip', value: clientIP },
+      { key: 'error', value: String(error) },
+      { key: 'message', value: message },
+    ]);
     return res.status(200).send(buildXml(1, message, ''));
   }
 
@@ -120,6 +130,11 @@ export default async function handler(req, res) {
     console.error(`[spauth/spauth] DB query failed | license: ${licenseCode} | error: ${err.message}`);
   }
 
-  console.error(`[spauth/spauth] ${licenseCode} | ip: ${req.socket?.remoteAddress} | error: ${message}`);
+  writeLog(LOG_DIR, [
+    { value: licenseCode || '' },
+    { key: 'ip', value: clientIP },
+    { key: 'error', value: String(error) },
+    { key: 'message', value: message },
+  ]);
   res.status(200).send(buildXml(1, message, ''));
 }
