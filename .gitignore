@@ -8,6 +8,8 @@ out/
 # env files
 .env
 .env.local
+# .env.production
+# .env.production.yaml
 .env.*.local
 
 # debug
@@ -15,6 +17,9 @@ npm-debug.log*
 
 # api log
 **/api/**/log/
+
+# Cloud SQL Proxy
+cloud-sql-proxy*
 
 # OS
 Thumbs.db

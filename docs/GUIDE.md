@@ -70,6 +70,7 @@ API Routes (/api/spauth/)
 
 ```
 license_/
+├── cloud-sql-proxy.exe       # Cloud SQL Auth Proxy (로컬→Cloud SQL 연결용, .gitignore 제외 대상)
 ├── GUIDE.md
 ├── jsconfig.json             # @ path alias (src/)
 ├── next.config.js            # rewrites: spauth.php → /api/spauth 등
@@ -208,7 +209,23 @@ cd license_
 npm install
 ```
 
-### 2. 개발 서버 실행
+### 2. Cloud SQL 연결 (Cloud SQL Auth Proxy)
+
+로컬에서 GCP Cloud SQL에 접속하려면 `cloud-sql-proxy.exe`를 실행해야 합니다.
+프로젝트 루트에 포함된 `cloud-sql-proxy.exe`를 사용하거나, [다운로드 페이지](https://cloud.google.com/sql/docs/postgres/sql-proxy)에서 받을 수 있습니다.
+
+```bash
+# 프록시 실행 (별도 터미널에서)
+.\cloud-sql-proxy.exe [PROJECT_ID]:asia-northeast3:license-db
+
+# 로컬 PostgreSQL이 설치되어 있어 5432 포트 충돌 시
+.\cloud-sql-proxy.exe [PROJECT_ID]:asia-northeast3:license-db --port=5433
+```
+
+> 프록시 실행 중이어야 DB 연결이 가능합니다. 개발 서버와 별도 터미널에서 실행하세요.
+> 상세 설정은 [GCP_DEPLOY_GUIDE.md](./GCP_DEPLOY_GUIDE.md)의 **3-5. 로컬 개발환경에서 Cloud SQL 연결**을 참고하세요.
+
+### 3. 개발 서버 실행
 
 ```bash
 npm run dev

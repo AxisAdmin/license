@@ -22,9 +22,7 @@ Axis License 프로젝트를 GCP(Google Cloud Platform)에 배포하기 위한 �
 
 | 서비스 | 용도 |
 |--------|------|
-| **Cloud Run** | Next.js 앱 서버 실행 |
-| **Cloud Build** | Docker 이미지 빌드 |
-| **Container Registry (GCR)** | Docker 이미지 저장 |
+| **Cloud Run** | Next.js 앱 서버 실행 (빌드·저장·배포 통합) |
 | **Cloud SQL** (선택) | PostgreSQL 데이터베이스 |
 
 ### 외부 서비스
@@ -64,9 +62,12 @@ gcloud config set run/region asia-northeast3
 
 ```bash
 gcloud services enable run.googleapis.com
-gcloud services enable cloudbuild.googleapis.com
-gcloud services enable containerregistry.googleapis.com
+
+# Cloud SQL 사용 시 추가
+gcloud services enable sqladmin.googleapis.com
 ```
+
+> `--source .` 배포 시 Cloud Build, Artifact Registry API는 자동으로 활성화 여부를 묻습니다.
 
 ---
 
@@ -75,9 +76,10 @@ gcloud services enable containerregistry.googleapis.com
 ### 3-1. 인스턴스 생성
 
 ```bash
-gcloud sql instances create axis-license-db \
-  --database-version=POSTGRES_14 \
-  --tier=db-f1-micro \
+gcloud sql instances create license-db \
+  --database-version=POSTGRES_17 \
+  --edition=enterprise \
+  --tier=db-g1-small \
   --region=asia-northeast3 \
   --storage-size=10GB \
   --storage-type=SSD
@@ -87,11 +89,11 @@ gcloud sql instances create axis-license-db \
 
 ```bash
 # 데이터베이스 생성
-gcloud sql databases create spauth --instance=axis-license-db
+gcloud sql databases create spauth --instance=license-db
 
 # 사용자 생성
 gcloud sql users create [DB_USER] \
-  --instance=axis-license-db \
+  --instance=license-db \
   --password=[DB_PASS]
 ```
 
@@ -101,10 +103,10 @@ Cloud Run에서 Cloud SQL에 접속하려면 연결 이름이 필요합니다.
 
 ```bash
 # 연결 이름 확인
-gcloud sql instances describe axis-license-db --format="value(connectionName)"
+gcloud sql instances describe license-db --format="value(connectionName)"
 ```
 
-출력 예시: `[PROJECT_ID]:asia-northeast3:axis-license-db`
+출력 예시: `[PROJECT_ID]:asia-northeast3:license-db`
 
 > 이 값은 Cloud Run 배포 시 `--add-cloudsql-instances` 옵션에 사용됩니다.
 
@@ -114,7 +116,47 @@ Cloud SQL에 접속하여 테이블을 생성합니다. SQL은 [postgreSQL.md](.
 
 ```bash
 # Cloud SQL 프록시로 접속
-gcloud sql connect axis-license-db --user=[DB_USER] --database=spauth
+gcloud sql connect license-db --user=[DB_USER] --database=spauth
+```
+
+### 3-5. 로컬 개발환경에서 Cloud SQL 연결
+
+로컬에서 개발할 때는 Cloud SQL Auth Proxy를 사용하여 Cloud SQL에 접속합니다.
+
+#### 프록시 설치
+
+[Cloud SQL Auth Proxy 다운로드 페이지](https://cloud.google.com/sql/docs/postgres/sql-proxy)에서 OS에 맞는 파일을 다운로드합니다.
+
+#### 로컬 PostgreSQL 포트 충돌 확인
+
+로컬에 PostgreSQL이 설치되어 있으면 기본 포트 5432를 이미 점유하고 있어 프록시가 바인딩에 실패합니다.
+
+```bash
+# 5432 포트 사용 여부 확인
+netstat -ano | findstr :5432
+```
+
+- **결과가 없으면** → 5432 포트 사용 가능 (기본 포트로 프록시 실행)
+- **LISTENING이 보이면** → 로컬 PostgreSQL이 실행 중 (5433 포트로 분리 필요)
+
+#### 프록시 실행
+
+```bash
+# 로컬 PostgreSQL이 없는 경우 (기본 포트)
+cloud-sql-proxy [PROJECT_ID]:asia-northeast3:license-db
+
+# 로컬 PostgreSQL이 있는 경우 (포트 분리)
+cloud-sql-proxy [PROJECT_ID]:asia-northeast3:license-db --port=5433
+```
+
+#### .env.local 설정
+
+```
+DB_HOST=localhost
+DB_PORT=5432          # 로컬 PostgreSQL이 있으면 5433으로 변경
+DB_USER=postgres
+DB_PASS=[DB_PASS]
+DB_NAME=spauth
 ```
 
 ---
@@ -148,82 +190,114 @@ REDIS_DB=0
 
 ### Memorystore 사용 시
 
-VPC 커넥터 설정이 추가로 필요합니다.
+Memorystore는 GCP 내부 네트워크(VPC)에서만 접근 가능하므로, Cloud Run에서 접속하려면 VPC 커넥터가 필요합니다.
+
+#### 4-1. API 활성화
 
 ```bash
-# VPC 커넥터 생성
-gcloud compute networks vpc-access connectors create axis-license-vpc \
+gcloud services enable redis.googleapis.com
+gcloud services enable vpcaccess.googleapis.com
+```
+
+#### 4-2. VPC 커넥터 생성
+
+Cloud Run과 Memorystore를 연결하는 네트워크 통로입니다.
+
+```bash
+gcloud compute networks vpc-access connectors create license-vpc \
   --region=asia-northeast3 \
   --range=10.8.0.0/28
+```
 
-# Memorystore 인스턴스 생성
-gcloud redis instances create axis-license-redis \
+#### 4-3. Memorystore 인스턴스 생성
+
+```bash
+gcloud redis instances create license-redis \
   --size=1 \
   --region=asia-northeast3 \
   --tier=basic
 ```
 
-> 배포 시 `--vpc-connector=axis-license-vpc` 옵션을 추가해야 합니다.
+#### 4-4. 접속 정보 확인
+
+```bash
+# Redis IP 확인
+gcloud redis instances describe license-redis \
+  --region=asia-northeast3 \
+  --format="value(host)"
+
+# Redis 포트 확인 (기본 6379)
+gcloud redis instances describe license-redis \
+  --region=asia-northeast3 \
+  --format="value(port)"
+```
+
+#### 4-5. 환경변수 설정
+
+```
+REDIS_HOST=[위에서 확인한 IP]
+REDIS_PORT=6379
+REDIS_PASS=
+REDIS_DB=0
+```
+
+> Memorystore Basic 티어는 비밀번호 없이 접속합니다. (`REDIS_PASS` 비워두기)
+
+#### 4-6. Cloud Run 배포 시 VPC 커넥터 추가
+
+배포 명령어에 `--vpc-connector` 옵션을 추가해야 합니다.
+
+```bash
+gcloud run deploy axis-license \
+  --source . \
+  --region asia-northeast3 \
+  --vpc-connector=license-vpc
+```
+
+> Memorystore는 VPC 내부 IP를 사용하므로 로컬 개발환경에서는 직접 접속할 수 없습니다. 로컬에서는 Docker Redis를 사용하거나 Redis 없이 개발하세요. (DB fallback 자동 동작)
 
 ---
 
 ## 5. 배포
 
-### 5-1. Docker 이미지 빌드 및 푸시
+### 5-1. Cloud Run 배포
 
-```bash
-gcloud builds submit --tag gcr.io/[PROJECT_ID]/axis-license
-```
+`--source .` 옵션을 사용하면 Dockerfile 감지 → 이미지 빌드 → 저장 → 배포를 한번에 처리합니다.
+환경변수는 `.env.production.yaml` 파일에서 읽어옵니다.
 
-### 5-2. Cloud Run 배포
-
-**Redis Cloud 사용 시:**
+**Memorystore 사용 시:**
 
 ```bash
 gcloud run deploy axis-license \
-  --image gcr.io/[PROJECT_ID]/axis-license \
-  --platform managed \
+  --source . \
   --region asia-northeast3 \
   --allow-unauthenticated \
-  --add-cloudsql-instances [PROJECT_ID]:asia-northeast3:axis-license-db \
-  --set-env-vars "\
-DB_HOST=/cloudsql/[PROJECT_ID]:asia-northeast3:axis-license-db,\
-DB_USER=[DB_USER],\
-DB_PASS=[DB_PASS],\
-DB_NAME=spauth,\
-DB_PORT=5432,\
-REDIS_HOST=[REDIS_HOST],\
-REDIS_PORT=6379,\
-REDIS_PASS=[REDIS_PASS],\
-REDIS_DB=0,\
-SESSION_SECRET=[SESSION_SECRET],\
-CDN_BASE_URL=[CDN_URL],\
-SPAUTH_CDN_BASE_URL=[SPAUTH_CDN_URL],\
-FTP_SERVER=[FTP_SERVER],\
-FTP_PORT=21,\
-FTP_USER=[FTP_USER],\
-FTP_PASS=[FTP_PASS],\
-FTP_PATH=web/images,\
-ADMIN_IP_WHITELIST=[IP_LIST],\
-ADMIN_PASSWORD_HASH=[HASH]"
+  --add-cloudsql-instances license-491102:asia-northeast3:license-db \
+  --vpc-connector=license-vpc \
+  --env-vars-file=.env.production.yaml
 ```
 
-**Memorystore 사용 시** — 위 명령어에 추가:
+**Redis Cloud 사용 시** (`--vpc-connector` 제거):
 
 ```bash
-  --vpc-connector=axis-license-vpc
+gcloud run deploy axis-license \
+  --source . \
+  --region asia-northeast3 \
+  --allow-unauthenticated \
+  --add-cloudsql-instances license-491102:asia-northeast3:license-db \
+  --env-vars-file=.env.production.yaml
 ```
 
-**Redis 없이 사용 시** — `REDIS_*` 환경변수 생략
+**Redis 없이 사용 시** — `.env.production.yaml`에서 `REDIS_*` 항목 제거
 
-### 5-3. 배포 확인
+### 5-2. 배포 확인
 
 ```bash
 # 서비스 URL 확인
-gcloud run services describe axis-license --format="value(status.url)"
+gcloud run services describe axis-license --region=asia-northeast3 --format="value(status.url)"
 
 # 로그 확인
-gcloud run services logs read axis-license --limit=50
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=axis-license" --limit=50 --format="table(timestamp, textPayload)"
 ```
 
 ---
@@ -268,14 +342,16 @@ Cloud Run 콘솔에서 환경변수를 관리하는 것이 보안상 안전합�
 코드 수정 후 재배포:
 
 ```bash
-# 빌드 + 푸시
-gcloud builds submit --tag gcr.io/[PROJECT_ID]/axis-license
-
-# 새 버전 배포 (환경변수는 이전 설정 유지됨)
+# 코드만 변경된 경우 (환경변수는 이전 설정 유지됨)
 gcloud run deploy axis-license \
-  --image gcr.io/[PROJECT_ID]/axis-license \
-  --platform managed \
+  --source . \
   --region asia-northeast3
+
+# 환경변수도 함께 변경하는 경우
+gcloud run deploy axis-license \
+  --source . \
+  --region asia-northeast3 \
+  --env-vars-file=.env.production.yaml
 ```
 
 ---
@@ -297,9 +373,26 @@ gcloud run deploy axis-license \
 
 | 증상 | 원인 | 해결 |
 |------|------|------|
-| 배포 후 502 에러 | 컨테이너 시작 실패 | `gcloud run services logs read axis-license` 로그 확인 |
+| 배포 후 502 에러 | 컨테이너 시작 실패 | [GCP_MANAGE_GUIDE.md](./GCP_MANAGE_GUIDE.md)의 로그 확인 명령어 참고 |
 | DB 연결 실패 | Cloud SQL 연결 이름 오류 | `--add-cloudsql-instances` 값 확인 |
 | Redis 연결 실패 | 환경변수 누락 또는 네트워크 | Redis 없이도 정상 동작 (DB fallback) |
 | FTP 업로드 실패 | 아웃바운드 차단 | Cloud Run은 기본적으로 외부 통신 허용 — FTP 서버 방화벽 확인 |
-| 이미지 빌드 실패 | 메모리 부족 | `gcloud builds submit --machine-type=e2-highcpu-8` 옵션 추가 |
+| 이미지 빌드 실패 | 메모리 부족 | Cloud Build 설정에서 머신 타입 변경 |
+| 빌드 PERMISSION_DENIED | 서비스 계정 권한 부족 | 아래 [권한 부여 방법](#빌드-권한-오류-해결) 참고 |
 | 자동 로그인 안됨 | X-Forwarded-For IP 불일치 | Cloud Run 앞단 로드밸런서 IP 확인 후 `ADMIN_IP_WHITELIST` 수정 |
+
+### 빌드 권한 오류 해결
+
+`--source .` 배포 시 `PERMISSION_DENIED` 오류가 발생하면 기본 서비스 계정에 권한을 부여합니다.
+
+```bash
+# Cloud Build 권한 부여
+gcloud projects add-iam-policy-binding license-491102 \
+  --member="serviceAccount:1045880349863-compute@developer.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder"
+
+# Cloud Storage 읽기 권한 (소스코드 업로드/다운로드)
+gcloud projects add-iam-policy-binding license-491102 \
+  --member="serviceAccount:1045880349863-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.objectViewer"
+```
