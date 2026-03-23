@@ -8,8 +8,8 @@ out/
 # env files
 .env
 .env.local
-# .env.production
-# .env.production.yaml
+.env.production
+.env.production.yaml
 .env.*.local
 
 # debug
