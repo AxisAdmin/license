@@ -5,6 +5,7 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { useAppRouter } from '@/hooks/useAppRouter';
+import logo from '@/assets/images/logo.jpg';
 
 export default function Header({ showLogout }) {
   const { logout } = useAppRouter();
@@ -16,7 +17,7 @@ export default function Header({ showLogout }) {
           <Box sx={{ flexGrow: 1 }}>
             <NextLink href="/auth" passHref legacyBehavior>
               <a style={{ display: 'inline-block' }}>
-                <img src="/images/logo.jpg" alt="logo" style={{ height: 46, verticalAlign: 'middle', marginBottom: 2 }} />
+                <img src={logo.src} alt="logo" style={{ height: 46, verticalAlign: 'middle', marginBottom: 2 }} />
               </a>
             </NextLink>
           </Box>

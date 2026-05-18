@@ -188,7 +188,7 @@ export default function Register({
               </FieldRow>
 
               <FieldRow label="SCMS URL (V2)">
-                <TextField name="scms_url_v2" defaultValue={formData?.scms_url_v2 || ''} size="small" fullWidth inputProps={{ style: { fontSize: 13 } }} />
+                <TextField name="scms_v2_apikey" defaultValue={formData?.scms_v2_apikey || ''} size="small" fullWidth inputProps={{ style: { fontSize: 13 } }} />
               </FieldRow>
 
               <FieldRow label="음원서비스">

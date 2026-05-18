@@ -79,7 +79,7 @@ GET /spauth/spauth.php?license_code=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 | `launcher_image` | 런처 이미지 URL |
 | `app_event` | 앱 이벤트 URL |
 | `scms_url` | SCMS URL |
-| `scms_url_v2` | SCMS URL v2 |
+| `scms_v2_apikey` | SCMS v2 API 키 |
 | `mp3_enable` | 음원서비스 사용 여부 (Y/N) |
 | `enable` | 라이선스 활성 여부 (Y/N) |
 | `ptype` | 파싱 타입 (json/xml) |

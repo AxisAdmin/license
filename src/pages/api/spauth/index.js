@@ -160,7 +160,7 @@ export default async function handler(req, res) {
       xmlBody += `<launcher_image><![CDATA[${imageUrl}]]></launcher_image>\n`;
       xmlBody += `<app_event><![CDATA[${row.app_event || ''}]]></app_event>\n`;
       xmlBody += `<scms_url><![CDATA[${row.scms_url || ''}]]></scms_url>\n`;
-      xmlBody += `<scms_url_v2><![CDATA[${row.scms_url_v2 || ''}]]></scms_url_v2>\n`;
+      xmlBody += `<scms_v2_apikey><![CDATA[${row.scms_v2_apikey || ''}]]></scms_v2_apikey>\n`;
       xmlBody += `<mp3_enable><![CDATA[${row.mp3_enable || ''}]]></mp3_enable>\n`;
       xmlBody += `<enable><![CDATA[${row.enable || ''}]]></enable>\n`;
       xmlBody += `<ptype><![CDATA[${row.ptype || ''}]]></ptype>\n`;

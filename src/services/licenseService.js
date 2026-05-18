@@ -30,7 +30,7 @@ export async function saveLicenseInfo(mode, licenseCode, formFields, files) {
     service_domain:         formFields.service_domain         || '',
     app_event:              formFields.app_event              || '',
     scms_url:               formFields.scms_url               || '',
-    scms_url_v2:            formFields.scms_url_v2            || '',
+    scms_v2_apikey:         formFields.scms_v2_apikey         || '',
     mp3_enable:             formFields.mp3_enable             || 'N',
     enable:                 formFields.enable                 || 'Y',
     ptype:                  formFields.ptype                  || 'json',
