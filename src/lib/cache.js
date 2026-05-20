@@ -1,6 +1,7 @@
 import redis from '@/config/redis';
 
 const DEFAULT_TTL = 7200; // 2시간 (초)
+// const DEFAULT_TTL = 5; // 5초
 const KEY_PREFIX = 'spauth:';
 const CACHE_TIMEOUT = 2000; // 캐시 작업 타임아웃 (ms)
 

@@ -6,6 +6,7 @@ import path from 'path';
 import pool from '@/config/db_pg';
 import { getCache, setCache } from '@/lib/cache';
 import { writeLog } from '@/lib/logger';
+import { getLicenseCode } from '@/lib/parseLicenseCode';
 
 const GEO_LICENSE_CODES = [
   '780FE6EC-BA01-4D38-A27F-A02111D02D8E',
@@ -79,6 +80,13 @@ function buildXml(error, message, xmlBody) {
   );
 }
 
+// Next.js 기본 bodyParser 비활성화 — multipart/form-data 포함 모든 Content-Type을 parseLicenseCode에서 직접 처리
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/xml');
   res.setHeader('Cache-Control', 'max-age=7200, must-revalidate');
@@ -86,10 +94,8 @@ export default async function handler(req, res) {
   let error = null;
   let message = '';
 
-  const licenseCode =
-    req.query.license_code ||
-    (req.body && req.body.license_code) ||
-    null;
+  const licenseCode = await getLicenseCode(req);
+  console.info(`[spauth] method=${req.method} | content-type=${req.headers['content-type'] || ''} | license=${licenseCode}`);
 
   // 라이센스코드 검증
   if (licenseCode) {
